@@ -24,7 +24,7 @@ client.on("messageCreate", async (message) => {
 
   const question = message.content.replace("!ask", "").trim();
   if (!question) {
-    return message.reply("❌ Ask me something after `!ask`");
+    return message.reply("Ask something after `!ask`.");
   }
 
   try {
@@ -33,10 +33,10 @@ client.on("messageCreate", async (message) => {
       input: question
     });
 
-    const reply = response.output_text;
+    const reply = response.output_text || "No response.";
     await message.reply(reply.slice(0, 1900));
   } catch (err) {
-    console.error("OpenAI Error:", err);
+    console.error("OPENAI ERROR:", err);
     await message.reply("⚠️ AI error. Check logs.");
   }
 });
