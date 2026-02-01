@@ -1,77 +1,52 @@
-require("dotenv").config();
-const { Client, GatewayIntentBits } = require("discord.js");
-const OpenAI = require("openai");
+import 'dotenv/config';
+import { Client, GatewayIntentBits } from 'discord.js';
+import OpenAI from 'openai';
 
-/* ================= CONFIG ================= */
-
-const PREFIX = "!ask";
-const ALLOWED_GUILD_ID = "1465718425765679135";
-
-/* ========================================== */
-
+// Discord client (SAFE intents only)
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
-  ]
+  ],
 });
 
+// OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-/* ================= READY ================= */
-
-client.once("ready", () => {
-  console.log(`🤖 Yap-AI logged in as ${client.user.tag}`);
+// Bot ready
+client.once('ready', () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-/* ================= MESSAGE HANDLER ================= */
-
-client.on("messageCreate", async (message) => {
+// Message handler
+client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-  if (!message.guild) return;
-  if (message.guild.id !== ALLOWED_GUILD_ID) return;
+  if (!message.content.startsWith('!ask')) return;
 
-  if (!message.content.toLowerCase().startsWith(PREFIX)) return;
-
-  const question = message.content.slice(PREFIX.length).trim();
+  const question = message.content.replace('!ask', '').trim();
   if (!question) {
-    return message.reply("❌ Ask me something after `!ask`");
+    return message.reply('❌ Please ask a question.');
   }
-
-  await message.channel.sendTyping();
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: 'gpt-4o-mini',
       messages: [
-        {
-          role: "system",
-          content:
-            "You are Yap AI, a friendly assistant for the Yap Sites Discord server. Help with websites, Discord bots, pricing, and ideas."
-        },
-        {
-          role: "user",
-          content: question
-        }
+        { role: 'system', content: 'You are a helpful AI assistant.' },
+        { role: 'user', content: question }
       ],
-      temperature: 0.6,
-      max_tokens: 400
     });
 
     const reply = response.choices[0].message.content;
-
-    await message.reply(
-      reply.length > 1900 ? reply.slice(0, 1900) + "…" : reply
-    );
+    await message.reply(reply);
   } catch (err) {
-    console.error("OPENAI ERROR:", err);
-    message.reply("⚠️ AI error. Try again later.");
+    console.error('OpenAI Error:', err);
+    await message.reply('⚠️ AI error. Try again later.');
   }
 });
 
-/* ================= LOGIN ================= */
-
+// Login
 client.login(process.env.TOKEN);
